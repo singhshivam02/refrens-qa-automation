@@ -1,0 +1,52 @@
+{
+  "invoice": {
+    "title": "Invoice",
+    "number": "Invoice Number",
+    "date": "Invoice Date",
+    "dueDate": "Due Date",
+    "billedBy": "Billed By",
+    "billedTo": "Billed To",
+    "lineItems": "Line Items",
+    "subtotal": "Subtotal",
+    "total": "Total",
+    "discount": "Discount",
+    "tax": "Tax",
+    "notes": "Notes",
+    "terms": "Terms & Conditions",
+    "saveAndContinue": "Save & Continue"
+  },
+  "placeholders": {
+    "businessName": "Your Business Name",
+    "clientName": "Client Name",
+    "email": "Email",
+    "phone": "Phone",
+    "address": "Address",
+    "city": "City",
+    "pincode": "Postal Code",
+    "gstin": "GSTIN",
+    "pan": "PAN",
+    "itemName": "Item Name",
+    "quantity": "Quantity",
+    "rate": "Rate",
+    "description": "Description",
+    "notes": "Notes",
+    "terms": "Terms"
+  },
+  "buttons": {
+    "createInvoice": "Create Your Invoice",
+    "addDueDate": "Add due date",
+    "addEmail": "Add Email",
+    "addPan": "Add PAN",
+    "addNewLine": "Add New Line",
+    "addDiscount": "Add Discounts",
+    "addCharges": "Add Additional Charges",
+    "addSignature": "Add Signature",
+    "addTerms": "Add Terms",
+    "addNotes": "Add Notes",
+    "addTotalInWords": "Show Total in Words",
+    "addAdditionalInfo": "Add Additional Info",
+    "addContactDetails": "Add Contact Details",
+    "saveAndContinue": "Save & Continue",
+    "login": "Login"
+  }
+}
