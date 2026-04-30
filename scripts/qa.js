@@ -14,13 +14,15 @@
 const path       = require('path');
 const { spawnSync } = require('child_process');
 
-const tsNode = path.join(__dirname, '..', 'node_modules', '.bin', 'ts-node');
+const isWin  = process.platform === 'win32';
+const tsNode = path.join(__dirname, '..', 'node_modules', '.bin', isWin ? 'ts-node.cmd' : 'ts-node');
 const script = path.join(__dirname, 'create-data.ts');
 const args   = process.argv.slice(2);
 
 const result = spawnSync(tsNode, [script, ...args], {
-  stdio: 'inherit',
-  cwd:   process.cwd(),
+  stdio:  'inherit',
+  cwd:    process.cwd(),
+  shell:  isWin,
 });
 
 process.exit(result.status ?? 0);
