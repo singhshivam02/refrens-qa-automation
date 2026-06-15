@@ -26,7 +26,7 @@ A command-line tool for creating test data in Refrens without touching the UI.
 
 - Node.js 18+
 - Access to the repo
-- API credentials (get from your team lead)
+- API credentials (get from business settings)
 
 ---
 
@@ -112,7 +112,7 @@ qa create invoice --preset=draft
 qa create invoice --paid
 qa create invoice --overdue
 qa create invoice --shipping
-qa create invoice --draft
+qa create invoice --draft 
 qa create invoice --partial=5000
 ```
 

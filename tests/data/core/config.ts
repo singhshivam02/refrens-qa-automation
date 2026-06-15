@@ -13,17 +13,17 @@ dotenv.config({ path: path.resolve(process.cwd(), `.env.${envName}`) });
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
 const API_BASE_URL_DEFAULTS: Record<string, string> = {
-  staging:    'https://serana.qa01.bizsuggest.com',
+  staging:    'https://serana.staging.bizsuggest.com',
   production: 'https://www.refrens.com',
 };
 
 export const ENV = envName;
 
 export const API_BASE_URL = (
-  process.env.API_BASE_URL || API_BASE_URL_DEFAULTS[envName] || 'https://serana.qa01.bizsuggest.com'
+  process.env.API_BASE_URL || API_BASE_URL_DEFAULTS[envName] || 'https://serana.staging.bizsuggest.com'
 ).replace(/\/$/, '');
 
-export const BASE_URL = process.env.BASE_URL || 'https://qa01.bizsuggest.com';
+export const BASE_URL = process.env.BASE_URL || 'https://staging.bizsuggest.com';
 
 /**
  * Fallback urlKey for CLI commands — set DEFAULT_URL_KEY in .env to skip --urlKey every time.

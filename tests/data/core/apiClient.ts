@@ -67,7 +67,15 @@ export class ApiClient {
       );
     }
 
-    const { accessToken } = await res.json() as { accessToken: string };
+    const body = await res.json() as Record<string, unknown>;
+    const accessToken = (body.accessToken ?? body.token) as string | undefined;
+    if (!accessToken) {
+      throw new Error(
+        `[ApiClient] Authentication succeeded but no token in response.\n` +
+        `Response keys: ${Object.keys(body).join(', ')}\n` +
+        `Full response: ${JSON.stringify(body)}`,
+      );
+    }
     _tokenCache.set(cacheKey, accessToken);
     console.log('[ApiClient] ✓ authenticated');
     return new ApiClient(baseUrl, accessToken);
