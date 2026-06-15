@@ -9,8 +9,19 @@
     "test": "playwright test",
     "test:headed": "playwright test --headed",
     "test:debug": "playwright test --debug",
-    "test:invoice": "playwright test tests/ui/invoice-en-in.spec.ts --headed",
     "test:report": "playwright show-report",
+
+    "test:elisif": "playwright test --project=elisif",
+    "test:elisif:firefox": "playwright test --project=elisif-firefox",
+    "test:elisif:webkit": "playwright test --project=elisif-webkit",
+
+    "test:lydia": "playwright test --project=lydia",
+    "test:lydia:firefox": "playwright test --project=lydia-firefox",
+    "test:lydia:webkit": "playwright test --project=lydia-webkit",
+
+    "test:smoke": "playwright test --project=elisif --project=elisif-firefox --project=elisif-webkit --project=lydia --project=lydia-firefox --project=lydia-webkit",
+
+    "test:invoice": "playwright test tests/ui/invoice-en-in.spec.ts --headed",
     "test:staging": "ENVIRONMENT=staging playwright test",
     "test:prod": "ENVIRONMENT=prod playwright test",
     "test:perf:staging": "ENVIRONMENT=staging playwright test tests/ui/invoice-performance.spec.ts",

@@ -44,15 +44,23 @@ export default defineConfig({
 
   projects: [
     // ── Logged-in app tests (Lydia) ─────────────────────────────────────────
-    // Uses the session saved by auth.setup.ts. Run auth.setup first to get
-    // storageState.json (solve CAPTCHA once, reused for the whole suite).
+    // storageState.json is created by globalSetup (auth.setup.ts) on Chromium.
+    // The saved cookies + localStorage are browser-agnostic, so all three
+    // browser variants can reuse the same file.
     {
       name:      'lydia',
       testMatch: '**/lydia/**/*.spec.ts',
-      use: {
-        ...devices['Desktop Chrome'],
-        storageState: STORAGE_STATE,
-      },
+      use:       { ...devices['Desktop Chrome'],  storageState: STORAGE_STATE },
+    },
+    {
+      name:      'lydia-firefox',
+      testMatch: '**/lydia/**/*.spec.ts',
+      use:       { ...devices['Desktop Firefox'], storageState: STORAGE_STATE },
+    },
+    {
+      name:      'lydia-webkit',
+      testMatch: '**/lydia/**/*.spec.ts',
+      use:       { ...devices['Desktop Safari'],  storageState: STORAGE_STATE },
     },
 
     // ── Public / marketing page tests (Elisif) ──────────────────────────────
@@ -62,8 +70,18 @@ export default defineConfig({
       testMatch: '**/elisif/**/*.spec.ts',
       use:       { ...devices['Desktop Chrome'] },
     },
+    {
+      name:      'elisif-firefox',
+      testMatch: '**/elisif/**/*.spec.ts',
+      use:       { ...devices['Desktop Firefox'] },
+    },
+    {
+      name:      'elisif-webkit',
+      testMatch: '**/elisif/**/*.spec.ts',
+      use:       { ...devices['Desktop Safari'] },
+    },
 
-    // ── Other UI / data tests ───────────────────────────────────────────────
+    // ── Other UI / data tests (Chromium only) ───────────────────────────────
     {
       name:      'chromium',
       testMatch: ['**/ui/**/*.spec.ts', '**/data/**/*.spec.ts'],
