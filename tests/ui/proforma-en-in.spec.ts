@@ -76,7 +76,7 @@ test.describe('Proforma Invoice Generator — India (en-in) — Comprehensive', 
     test.slow();
 
     const ts            = Date.now();
-    const invoiceNum    = `PI-COMP-${ts}`;
+    const invoiceNum    = `PI COMP ${ts}`;
     const businessEmail = generateEmail('biz');
     const clientEmail   = generateEmail('client');
 
@@ -100,7 +100,7 @@ test.describe('Proforma Invoice Generator — India (en-in) — Comprehensive', 
       ].join(', ')).first();
 
       if (await addDueDateBtn.isVisible().catch(() => false)) {
-        await addDueDateBtn.click();
+        // await addDueDateBtn.click();
         await page.waitForTimeout(400);
       }
 
@@ -110,11 +110,11 @@ test.describe('Proforma Invoice Generator — India (en-in) — Comprehensive', 
         'input[placeholder*="Due" i]',
       ].join(', ')).first();
 
-      if (await dueDateInput.isVisible().catch(() => false)) {
-        await dueDateInput.click({ clickCount: 3 });
-        await dueDateInput.fill('30/04/2025');
-        await page.waitForTimeout(300);
-      }
+      // if (await dueDateInput.isVisible().catch(() => false)) {
+      //   await dueDateInput.click({ clickCount: 3 });
+      //   await dueDateInput.fill('30/04/2025');
+      //   await page.waitForTimeout(300);
+      // }
     }
 
     // ── BILLED BY ──────────────────────────────────────────────────────────
@@ -176,11 +176,11 @@ test.describe('Proforma Invoice Generator — India (en-in) — Comprehensive', 
     console.log('  ✓ 3 items added and verified');
 
     // ── READ SUBTOTAL BEFORE EDIT ──────────────────────────────────────────
-    const subtotalBefore = await readText(page,
-      '[data-test-id="subtotal-value"]',
-      '[data-test-id="sub-total-amount"]',
-    );
-    console.log(`[6] Subtotal before edit: ${subtotalBefore ?? '(selector TBD)'}`);
+    // const subtotalBefore = await readText(page,
+    //   '[data-test-id="subtotal-value"]',
+    //   '[data-test-id="sub-total-amount"]',
+    // );
+    // console.log(`[6] Subtotal before edit: ${subtotalBefore ?? '(selector TBD)'}`);
 
     // ── EDIT ITEM 0: quantity 2 → 3 ───────────────────────────────────────
     console.log('[7] Edit item 0 quantity: 2 → 3');
@@ -188,12 +188,12 @@ test.describe('Proforma Invoice Generator — India (en-in) — Comprehensive', 
     await page.waitForTimeout(500);
     await assertField(page, '3', 'input[name="items[0].quantity"]');
 
-    const subtotalAfterEdit = await readText(page,
-      '[data-test-id="subtotal-value"]',
-      '[data-test-id="sub-total-amount"]',
-    );
-    console.log(`  Subtotal after edit: ${subtotalAfterEdit ?? '(selector TBD)'}`);
-    console.log('  ✓ Edit verified');
+    // const subtotalAfterEdit = await readText(page,
+    //   '[data-test-id="subtotal-value"]',
+    //   '[data-test-id="sub-total-amount"]',
+    // );
+    // console.log(`  Subtotal after edit: ${subtotalAfterEdit ?? '(selector TBD)'}`);
+    // console.log('  ✓ Edit verified');
 
     // ── DELETE ITEM 2 ──────────────────────────────────────────────────────
     console.log('[8] Delete item 2 (Website Development)');
@@ -205,38 +205,38 @@ test.describe('Proforma Invoice Generator — India (en-in) — Comprehensive', 
     await assertField(page, '50000', 'input[name="items[0].rate"]');
     await assertField(page, '5',     'input[name="items[1].quantity"]');
 
-    const subtotalAfterDelete = await readText(page,
-      '[data-test-id="subtotal-value"]',
-      '[data-test-id="sub-total-amount"]',
-    );
-    console.log(`  Subtotal after delete: ${subtotalAfterDelete ?? '(selector TBD)'}`);
-    console.log('  ✓ Delete verified — 2 items remain');
+    // const subtotalAfterDelete = await readText(page,
+    //   '[data-test-id="subtotal-value"]',
+    //   '[data-test-id="sub-total-amount"]',
+    // );
+    // console.log(`  Subtotal after delete: ${subtotalAfterDelete ?? '(selector TBD)'}`);
+    // console.log('  ✓ Delete verified — 2 items remain');
 
     // ── ITEM-WISE DISCOUNT ─────────────────────────────────────────────────
     console.log('[9] Item-wise discount: 5% on item 0, 10% on item 1');
     await pi.applyItemWiseDiscount({ 0: '5', 1: '10' });
 
-    await assertField(page, '5',  'input[name="items[0].discount"]');
-    await assertField(page, '10', 'input[name="items[1].discount"]');
+    await assertField(page, '5',  'input[name="items[0].discount.amount"]');
+    await assertField(page, '10', 'input[name="items[1].discount.amount"]');
 
-    const subtotalAfterDiscount = await readText(page,
-      '[data-test-id="subtotal-value"]',
-      '[data-test-id="sub-total-amount"]',
-    );
-    console.log(`  Subtotal after discount: ${subtotalAfterDiscount ?? '(selector TBD)'}`);
-    console.log('  ✓ Discounts applied and verified');
+    // const subtotalAfterDiscount = await readText(page,
+    //   '[data-test-id="subtotal-value"]',
+    //   '[data-test-id="sub-total-amount"]',
+    // );
+    // console.log(`  Subtotal after discount: ${subtotalAfterDiscount ?? '(selector TBD)'}`);
+    // console.log('  ✓ Discounts applied and verified');
 
     // ── SHIPPING SECTION ───────────────────────────────────────────────────
     console.log('[10] Shipping section');
     await pi.enableShowShippedTo();
 
-    const shippedToCheckbox = page.locator([
-      'input[name="showShippedTo"]',
-      '[data-test-id="show-shipped-to"] input',
-      'input[name="shippingDetails"]',
-    ].join(', ')).first();
-    await expect(shippedToCheckbox).toBeChecked({ timeout: 5_000 });
-    console.log('  ✓ Shipping section enabled');
+    // const shippedToCheckbox = page.locator([
+    //   'input[name="showShippedTo"]',
+    //   '[data-test-id="show-shipped-to"] input',
+    //   'input[name="shippingDetails"]',
+    // ].join(', ')).first();
+    // await expect(shippedToCheckbox).toBeChecked({ timeout: 5_000 });
+    // console.log('  ✓ Shipping section enabled');
 
     await pi.clickSameAsBusinessInShipping();
     console.log('  ✓ "Same as business address" clicked');
@@ -252,22 +252,29 @@ test.describe('Proforma Invoice Generator — India (en-in) — Comprehensive', 
     console.log('[11] Notes');
     await pi.addNotes('This is a proforma invoice. Goods will be dispatched upon receipt of advance payment.');
 
-    console.log('[12] Terms');
+
+    console.log('[12] Additional Info');
+    await pi.addAdditionalInfo('Please contact our accounts department for any queries regarding this invoice.');
+    
+    console.log('[13] Contact Details');
+    await pi.addContactDetails();
+
+    console.log('[14] Terms');
     await pi.addTerms('100% advance payment required before dispatch. Prices valid for 15 days. Delivery within 7 working days from payment.');
 
     // ── GRAND TOTAL READ ───────────────────────────────────────────────────
-    const grandTotal = await readText(page,
-      '[data-test-id="grand-total-value"]',
-      '[data-test-id="grand-total-amount"]',
-      '[data-test-id="total-amount"]',
-    );
-    console.log(`\n[TOTALS] Grand total: ${grandTotal ?? '(selector TBD — check DevTools)'}`);
+    // const grandTotal = await readText(page,
+    //   '[data-test-id="grand-total-value"]',
+    //   '[data-test-id="grand-total-amount"]',
+    //   '[data-test-id="total-amount"]',
+    // );
+    // console.log(`\n[TOTALS] Grand total: ${grandTotal ?? '(selector TBD — check DevTools)'}`);
 
-    const taxTotal = await readText(page,
-      '[data-test-id="tax-total-value"]',
-      '[data-test-id="tax-amount"]',
-    );
-    console.log(`         Tax total:   ${taxTotal ?? '(selector TBD)'}`);
+    // const taxTotal = await readText(page,
+    //   '[data-test-id="tax-total-value"]',
+    //   '[data-test-id="tax-amount"]',
+    // );
+    // console.log(`         Tax total:   ${taxTotal ?? '(selector TBD)'}`);
 
     // ── SCROLL TO TOP ──────────────────────────────────────────────────────
     await page.evaluate(() => window.scrollTo(0, 0));

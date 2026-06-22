@@ -40,10 +40,10 @@ test.describe('Invoice Generator — India (en-in)', () => {
   test('item-wise discount values are applied correctly', async ({ page }) => {
     const inv = await setup(page);
     await inv.fillForm(enIn.invoiceWithItemWiseDiscount);
-    await expect(page.locator('input[name="items[0].discount"]')).toHaveValue(
+    await expect(page.locator('input[name="items[0].discount.amount"]')).toHaveValue(
       enIn.invoiceWithItemWiseDiscount.features!.discount!.itemDiscounts![0],
     );
-    await expect(page.locator('input[name="items[1].discount"]')).toHaveValue(
+    await expect(page.locator('input[name="items[1].discount.amount"]')).toHaveValue(
       enIn.invoiceWithItemWiseDiscount.features!.discount!.itemDiscounts![1],
     );
     await inv.clickSaveAndContinue();
@@ -54,7 +54,7 @@ test.describe('Invoice Generator — India (en-in)', () => {
     test.slow();
     const password = config.testPassword;
     if (!password) throw new Error('TEST_PASSWORD not set in .env');
-    const captchaWait = parseInt(process.env.CAPTCHA_WAIT_MS ?? '90000', 10);
+   // const captchaWait = parseInt(process.env.CAPTCHA_WAIT_MS ?? '90000', 10);
 
     const inv = await setup(page);
     const invoice = {
@@ -64,7 +64,7 @@ test.describe('Invoice Generator — India (en-in)', () => {
 
     await inv.fillForm(invoice);
     await inv.clickSaveAndContinue();
-    await inv.loginAfterSave(password, captchaWait);
+    await inv.loginAfterSave(password);
 
     await expect(page).not.toHaveURL(/free-online-invoice-generator/, { timeout: 30_000 });
   });

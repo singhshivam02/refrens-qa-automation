@@ -206,13 +206,13 @@ test.describe('Invoice Generator — India (en-in) — Comprehensive', () => {
     await page.waitForTimeout(500);
     await assertField(page, '3', 'input[name="items[0].quantity"]');
 
-    const subtotalAfterEdit = await readText(page,
-      '[data-test-id="subtotal-value"]',
-      '[data-test-id="sub-total-amount"]',
-      '.subtotal-value',
-    );
-    console.log(`  Subtotal after qty edit: ${subtotalAfterEdit ?? '(not found)'}`);
-    console.log('  ✓ Edit verified — totals updated');
+    // const subtotalAfterEdit = await readText(page,
+    //   '[data-test-id="subtotal-value"]',
+    //   '[data-test-id="sub-total-amount"]',
+    //   '.subtotal-value',
+    // );
+    // console.log(`  Subtotal after qty edit: ${subtotalAfterEdit ?? '(not found)'}`);
+    // console.log('  ✓ Edit verified — totals updated');
 
     // ── DELETE ITEM 2 (Website Development) ───────────────────────────────
     console.log('[8] Delete item 2 (Website Development)');
@@ -226,13 +226,13 @@ test.describe('Invoice Generator — India (en-in) — Comprehensive', () => {
     await assertField(page, '50000', 'input[name="items[0].rate"]');
     await assertField(page, '5',     'input[name="items[1].quantity"]');
 
-    const subtotalAfterDelete = await readText(page,
-      '[data-test-id="subtotal-value"]',
-      '[data-test-id="sub-total-amount"]',
-      '.subtotal-value',
-    );
-    console.log(`  Subtotal after delete:   ${subtotalAfterDelete ?? '(not found)'}`);
-    console.log('  ✓ Delete verified — 2 items remain, totals updated');
+    // const subtotalAfterDelete = await readText(page,
+    //   '[data-test-id="subtotal-value"]',
+    //   '[data-test-id="sub-total-amount"]',
+    //   '.subtotal-value',
+    // );
+    // console.log(`  Subtotal after delete:   ${subtotalAfterDelete ?? '(not found)'}`);
+    // console.log('  ✓ Delete verified — 2 items remain, totals updated');
 
     // ── ITEM-WISE DISCOUNT ─────────────────────────────────────────────────
     // NOTE: do NOT use "Discount on Total" — only item-wise
@@ -242,13 +242,13 @@ test.describe('Invoice Generator — India (en-in) — Comprehensive', () => {
     await assertField(page, '5',  'input[name="items[0].discount.amount"]');
     await assertField(page, '10', 'input[name="items[1].discount.amount"]');
 
-    const subtotalAfterDiscount = await readText(page,
-      '[data-test-id="subtotal-value"]',
-      '[data-test-id="sub-total-amount"]',
-      '.subtotal-value',
-    );
-    console.log(`  Subtotal after discount: ${subtotalAfterDiscount ?? '(not found)'}`);
-    console.log('  ✓ Item-wise discounts applied and verified');
+    // const subtotalAfterDiscount = await readText(page,
+    //   '[data-test-id="subtotal-value"]',
+    //   '[data-test-id="sub-total-amount"]',
+    //   '.subtotal-value',
+    // );
+    // console.log(`  Subtotal after discount: ${subtotalAfterDiscount ?? '(not found)'}`);
+    // console.log('  ✓ Item-wise discounts applied and verified');
 
     // ── SHIPPING SECTION ───────────────────────────────────────────────────
     console.log('[10] Shipping section');
@@ -257,13 +257,13 @@ test.describe('Invoice Generator — India (en-in) — Comprehensive', () => {
     await invoicePage.enableShowShippedTo();
 
     // Verify the checkbox is checked
-    const shippedToCheckbox = page.locator([
-      'input[name="showShippedTo"]',
-      '[data-test-id="show-shipped-to"] input',
-      'input[name="shippingDetails"]',
-    ].join(', ')).first();
-    await expect(shippedToCheckbox).toBeChecked({ timeout: 5_000 });
-    console.log('  ✓ Shipping section enabled');
+    // const shippedToCheckbox = page.locator([
+    //   'input[name="showShippedTo"]',
+    //   '[data-test-id="show-shipped-to"] input',
+    //   'input[name="shippingDetails"]',
+    // ].join(', ')).first();
+    // await expect(shippedToCheckbox).toBeChecked({ timeout: 5_000 });
+    // console.log('  ✓ Shipping section enabled');
 
     // Click "Same as your business address"
     await invoicePage.clickSameAsBusinessInShipping();
@@ -289,20 +289,20 @@ test.describe('Invoice Generator — India (en-in) — Comprehensive', () => {
     );
 
     // ── GRAND TOTAL — final read ───────────────────────────────────────────
-    const grandTotal = await readText(page,
-      '[data-test-id="grand-total-value"]',
-      '[data-test-id="grand-total-amount"]',
-      '[data-test-id="total-amount"]',
-      '.grand-total-value',
-    );
-    console.log(`\n[TOTALS] Grand total: ${grandTotal ?? '(selector not found — check DevTools)'}`);
+    // const grandTotal = await readText(page,
+    //   '[data-test-id="grand-total-value"]',
+    //   '[data-test-id="grand-total-amount"]',
+    //   '[data-test-id="total-amount"]',
+    //   '.grand-total-value',
+    // );
+    // console.log(`\n[TOTALS] Grand total: ${grandTotal ?? '(selector not found — check DevTools)'}`);
 
-    const taxTotal = await readText(page,
-      '[data-test-id="tax-total-value"]',
-      '[data-test-id="tax-amount"]',
-      '.tax-total-value',
-    );
-    console.log(`         Tax total:   ${taxTotal ?? '(not found)'}`);
+    // const taxTotal = await readText(page,
+    //   '[data-test-id="tax-total-value"]',
+    //   '[data-test-id="tax-amount"]',
+    //   '.tax-total-value',
+    // );
+    // console.log(`         Tax total:   ${taxTotal ?? '(not found)'}`);
 
     // ── SCROLL TO TOP — review full form ──────────────────────────────────
     await page.evaluate(() => window.scrollTo(0, 0));

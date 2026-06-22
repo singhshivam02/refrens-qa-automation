@@ -13,15 +13,10 @@ dotenv.config({ path: defaultEnvFile }); // .env fills in anything not already s
 const baseURL = process.env.BASE_URL || 'https://staging.bizsuggest.com';
 const headless = process.env.HEADLESS !== 'false';
 
-// globalSetup (auth.setup.ts) always runs first and guarantees this file exists
-// before any lydia test starts. Hardcoding avoids the fs.existsSync() race where
-// the check runs at config-load time (before globalSetup) and returns false on
-// a fresh machine, causing lydia to run without auth state.
 const STORAGE_STATE = 'storageState.json';
 
 export default defineConfig({
   testDir: './tests',
-  globalSetup: './tests/auth.setup.ts',
   captureGitInfo: { commit: false, diff: false },
 
   fullyParallel: false,
@@ -29,7 +24,9 @@ export default defineConfig({
 
   retries: process.env.CI ? 1 : 0,
 
-  reporter: [['list']],
+  reporter: [
+    ['html', { open: 'never' }],
+    ['list']],
 
   use: {
     baseURL,
@@ -43,24 +40,36 @@ export default defineConfig({
   },
 
   projects: [
+    // ── Auth setup project ──────────────────────────────────────────────────
+    // Runs only when a dependent project is selected. Opens headed so the
+    // CAPTCHA is visible. storageState.json is written here and reused below.
+    {
+      name:      'auth-setup',
+      testMatch: '**/auth.setup.ts',
+      use:       { browserName: 'chromium', ...devices['Desktop Chrome'], headless: false },
+    },
+
     // ── Logged-in app tests (Lydia) ─────────────────────────────────────────
-    // storageState.json is created by globalSetup (auth.setup.ts) on Chromium.
+    // storageState.json is created by auth-setup on Chromium.
     // The saved cookies + localStorage are browser-agnostic, so all three
     // browser variants can reuse the same file.
     {
-      name:      'lydia',
-      testMatch: '**/lydia/**/*.spec.ts',
-      use:       { ...devices['Desktop Chrome'],  storageState: STORAGE_STATE },
+      name:         'lydia',
+      testMatch:    '**/lydia/**/*.spec.ts',
+      dependencies: ['auth-setup'],
+      use:          { browserName: 'chromium', ...devices['Desktop Chrome'],  storageState: STORAGE_STATE },
     },
     {
-      name:      'lydia-firefox',
-      testMatch: '**/lydia/**/*.spec.ts',
-      use:       { ...devices['Desktop Firefox'], storageState: STORAGE_STATE },
+      name:         'lydia-firefox',
+      testMatch:    '**/lydia/**/*.spec.ts',
+      dependencies: ['auth-setup'],
+      use:          { browserName: 'firefox',  ...devices['Desktop Firefox'], storageState: STORAGE_STATE },
     },
     {
-      name:      'lydia-webkit',
-      testMatch: '**/lydia/**/*.spec.ts',
-      use:       { ...devices['Desktop Safari'],  storageState: STORAGE_STATE },
+      name:         'lydia-webkit',
+      testMatch:    '**/lydia/**/*.spec.ts',
+      dependencies: ['auth-setup'],
+      use:          { browserName: 'webkit',   ...devices['Desktop Safari'],  storageState: STORAGE_STATE },
     },
 
     // ── Public / marketing page tests (Elisif) ──────────────────────────────
@@ -68,24 +77,35 @@ export default defineConfig({
     {
       name:      'elisif',
       testMatch: '**/elisif/**/*.spec.ts',
-      use:       { ...devices['Desktop Chrome'] },
+      use:       { browserName: 'chromium', ...devices['Desktop Chrome'] },
     },
     {
       name:      'elisif-firefox',
       testMatch: '**/elisif/**/*.spec.ts',
-      use:       { ...devices['Desktop Firefox'] },
+      use:       { browserName: 'firefox',  ...devices['Desktop Firefox'] },
     },
     {
-      name:      'elisif-webkit',
+      name:      'elisif-edge',
       testMatch: '**/elisif/**/*.spec.ts',
-      use:       { ...devices['Desktop Safari'] },
+      use:       { browserName: 'chromium', ...devices['Desktop Edge'], channel: 'msedge' },
     },
 
-    // ── Other UI / data tests (Chromium only) ───────────────────────────────
+    // ── Auth-required UI tests ──────────────────────────────────────────────
+    // document-creation and invoice-performance hit authenticated app routes.
     {
-      name:      'chromium',
-      testMatch: ['**/ui/**/*.spec.ts', '**/data/**/*.spec.ts'],
-      use:       { ...devices['Desktop Chrome'] },
+      name:         'ui-auth',
+      testMatch:    ['**/ui/document-creation.spec.ts', '**/ui/invoice-performance.spec.ts'],
+      dependencies: ['auth-setup'],
+      use:          { browserName: 'chromium', ...devices['Desktop Chrome'], storageState: STORAGE_STATE },
+    },
+
+    // ── Public UI / data tests (Chromium only) ──────────────────────────────
+    // All other ui/** tests are public pages — no login required.
+    {
+      name:       'chromium',
+      testMatch:  ['**/ui/**/*.spec.ts', '**/data/**/*.spec.ts'],
+      testIgnore: ['**/ui/document-creation.spec.ts', '**/ui/invoice-performance.spec.ts'],
+      use:        { browserName: 'chromium', ...devices['Desktop Chrome'] },
     },
   ],
 

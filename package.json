@@ -13,13 +13,13 @@
 
     "test:elisif": "playwright test --project=elisif",
     "test:elisif:firefox": "playwright test --project=elisif-firefox",
-    "test:elisif:webkit": "playwright test --project=elisif-webkit",
+    "test:elisif:edge": "playwright test --project=elisif-edge",
 
     "test:lydia": "playwright test --project=lydia",
     "test:lydia:firefox": "playwright test --project=lydia-firefox",
     "test:lydia:webkit": "playwright test --project=lydia-webkit",
 
-    "test:smoke": "playwright test --project=elisif --project=elisif-firefox --project=elisif-webkit --project=lydia --project=lydia-firefox --project=lydia-webkit",
+    "test:smoke": "playwright test --project=elisif --project=elisif-firefox --project=elisif-edge --project=lydia --project=lydia-firefox --project=lydia-webkit",
 
     "test:invoice": "playwright test tests/ui/invoice-en-in.spec.ts --headed",
     "test:staging": "ENVIRONMENT=staging playwright test",

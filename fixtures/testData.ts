@@ -181,9 +181,8 @@ export const enGb = {
   businesses: {
     techLtd: {
       name:    faker.company.name() + ' Ltd',
-      phone:   '07' + faker.string.numeric(9),
+      phone:   '07' + faker.helpers.arrayElement(['4','5','6','7','8','9']) + faker.string.numeric(8),
       email:   faker.internet.email(),
-      taxId:   'GB123456789',        // VAT number
       address: faker.location.streetAddress(),
       city:    'London',
       pincode: 'SW1A 2AA',
@@ -197,9 +196,8 @@ export const enGb = {
   clients: {
     britishCorp: {
       name:    faker.company.name() + ' Ltd',
-      phone:   '07' + faker.string.numeric(9),
+      phone:   '07' + faker.helpers.arrayElement(['4','5','6','7','8','9']) + faker.string.numeric(8),
       email:   faker.internet.email(),
-      taxId:   'GB987654321',
       address: faker.location.streetAddress(),
       city:    'London',
       pincode: 'NW1 6XE',
@@ -241,18 +239,16 @@ export const enGb = {
     currency: 'GBP',
     business: {
       name:    faker.company.name() + ' Ltd',
-      phone:   '07' + faker.string.numeric(9),
+      phone:   '07' + faker.helpers.arrayElement(['4','5','6','7','8','9']) + faker.string.numeric(8),
       email:   faker.internet.email(),
-      taxId:   'GB123456789',
       address: faker.location.streetAddress(),
       city:    'London',
       pincode: 'SW1A 2AA',
     },
     client: {
       name:    faker.company.name() + ' Ltd',
-      phone:   '07' + faker.string.numeric(9),
+      phone:   '07' + faker.helpers.arrayElement(['4','5','6','7','8','9']) + faker.string.numeric(8),
       email:   faker.internet.email(),
-      taxId:   'GB987654321',
       address: faker.location.streetAddress(),
       city:    'London',
       pincode: 'NW1 6XE',
@@ -262,7 +258,7 @@ export const enGb = {
       { name: 'Web Development',     taxRate: '20', quantity: '1', rate: '3500' },
     ],
     features: {
-      notes: 'VAT registered. VAT number: GB123456789.',
+      notes: 'Payment due within 30 days.',
       terms: 'Payment due within 30 days.',
     },
   } satisfies DocumentFormData,
@@ -277,7 +273,6 @@ export const enGlobal = {
   businesses: {
     globalAgency: {
       name:    faker.company.name() + ' LLC',
-      phone:   '+1 ' + faker.string.numeric(3) + ' ' + faker.string.numeric(3) + ' ' + faker.string.numeric(4),
       email:   faker.internet.email(),
       address: faker.location.streetAddress(),
       city:    'New York',
@@ -292,7 +287,6 @@ export const enGlobal = {
   clients: {
     internationalCo: {
       name:    faker.company.name(),
-      phone:   '+1 ' + faker.string.numeric(3) + ' ' + faker.string.numeric(3) + ' ' + faker.string.numeric(4),
       email:   faker.internet.email(),
       address: faker.location.streetAddress(),
       city:    'San Francisco',
@@ -326,7 +320,6 @@ export const enGlobal = {
     currency: 'USD',
     business: {
       name:    faker.company.name() + ' LLC',
-      phone:   '+1 ' + faker.string.numeric(3) + ' ' + faker.string.numeric(3) + ' ' + faker.string.numeric(4),
       email:   faker.internet.email(),
       address: faker.location.streetAddress(),
       city:    'New York',
@@ -334,7 +327,6 @@ export const enGlobal = {
     },
     client: {
       name:    faker.company.name(),
-      phone:   '+1 ' + faker.string.numeric(3) + ' ' + faker.string.numeric(3) + ' ' + faker.string.numeric(4),
       email:   faker.internet.email(),
       address: faker.location.streetAddress(),
       city:    'San Francisco',

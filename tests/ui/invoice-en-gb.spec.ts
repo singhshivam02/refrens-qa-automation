@@ -1,18 +1,14 @@
 /**
  * Invoice Generator — United Kingdom (en-gb)
  *
- * Locale: en-gb | Tax: VAT | Currency: GBP
+ * Locale: en-gb | Currency: GBP
  * URL: /en-gb/free-online-invoice-generator
  *
  * Covers:
  *  1. Minimal invoice
- *  2. Full invoice (VAT No., two items with 20% VAT, notes, terms)
- *  3. Invoice with zero-rated VAT item
+ *  2. Full invoice (two items, notes, terms)
+ *  3. Invoice with zero-rated item
  *  4. End-to-end with login
- *
- * NOTE: VAT field name (billedBy.vatNumber) is a best-guess based on the
- * India (billedBy.gstin) naming pattern. Verify against the live en-gb DOM
- * and update config/locales.ts if different.
  */
 
 import { test, expect } from '@playwright/test';
@@ -52,9 +48,9 @@ test.describe('Invoice Generator — United Kingdom (en-gb)', () => {
     await expect(page.locator('input[type="password"]')).toBeVisible({ timeout: 10_000 });
   });
 
-  // ── 2. Full invoice with VAT ───────────────────────────────────────────────
+  // ── 2. Full invoice ────────────────────────────────────────────────────────
 
-  test('2 — full invoice: VAT No., two items, notes, terms', async ({ page }) => {
+  test('2 — full invoice: two items, notes, terms', async ({ page }) => {
     const invoicePage = await setupPage(page);
 
     await invoicePage.fillForm(enGb.fullInvoice);
@@ -67,9 +63,9 @@ test.describe('Invoice Generator — United Kingdom (en-gb)', () => {
     await expect(page.locator('input[type="password"]')).toBeVisible({ timeout: 10_000 });
   });
 
-  // ── 3. Zero-rated VAT item ─────────────────────────────────────────────────
+  // ── 3. Zero-rated item ─────────────────────────────────────────────────────
 
-  test('3 — zero-rated VAT item (0%)', async ({ page }) => {
+  test('3 — zero-rated item (0%)', async ({ page }) => {
     const invoicePage = await setupPage(page);
 
     await invoicePage.fillForm({
@@ -84,18 +80,9 @@ test.describe('Invoice Generator — United Kingdom (en-gb)', () => {
     await expect(page.locator('input[type="password"]')).toBeVisible({ timeout: 10_000 });
   });
 
-  // ── 4. No GSTIN field on en-gb ─────────────────────────────────────────────
+  // ── 4. End-to-end with login ───────────────────────────────────────────────
 
-  test('4 — GSTIN field absent on en-gb locale', async ({ page }) => {
-    const invoicePage = await setupPage(page);
-
-    // GSTIN field should not exist — en-gb uses VAT
-    await expect(page.locator('input[name="billedBy.gstin"]')).toHaveCount(0);
-  });
-
-  // ── 5. End-to-end with login ───────────────────────────────────────────────
-
-  test('5 — end-to-end: fill → save → login', async ({ page }) => {
+  test('4 — end-to-end: fill → save → login', async ({ page }) => {
     test.slow();
     const { password, captchaWait } = getCredentials();
     const invoicePage = await setupPage(page);

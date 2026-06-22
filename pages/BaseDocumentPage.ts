@@ -548,7 +548,7 @@ export abstract class BaseDocumentPage extends BasePage {
     if (captchaWaitMs > 0) {
       await this.waitForManualCaptcha(captchaWaitMs);
     }
-    await this.page.locator(DocumentSelectors.loginSubmitBtn).click();
+    // await this.page.locator(DocumentSelectors.loginSubmitBtn).click();
     await this.waitForNetworkIdle();
   }
 
