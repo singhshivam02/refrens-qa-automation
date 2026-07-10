@@ -21,6 +21,21 @@ npm test -- --grep "complete"     # Specific test
 npm run report                    # View results
 ```
 
+### Browser install issues (e.g. `npx playwright install` fails on newer Ubuntu)
+
+Playwright's bundled Chromium only supports a fixed list of Linux distros, so
+`npx playwright install` can fail on newer releases (e.g. Ubuntu 26) that
+aren't on that list yet. If that happens, the config automatically falls back
+to your system-installed Google Chrome — you just need Chrome present:
+
+```bash
+sudo apt install google-chrome-stable   # or: npx playwright install chrome
+```
+
+No other changes needed — `playwright.config.ts` detects the missing bundled
+Chromium and switches Chromium-based projects to `channel: 'chrome'` on its
+own.
+
 ## What Gets Tested
 
 ✅ Invoice number & header  

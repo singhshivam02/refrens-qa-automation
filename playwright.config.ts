@@ -1,6 +1,8 @@
-import { defineConfig, devices } from '@playwright/test';
+import { defineConfig, devices, chromium } from '@playwright/test';
 import dotenv from 'dotenv';
 import path from 'path';
+import fs from 'fs';
+import os from 'os';
 
 // Load environment-specific .env file first, fall back to .env
 const env = process.env.ENVIRONMENT || 'staging';
@@ -14,6 +16,43 @@ const baseURL = process.env.BASE_URL || 'https://staging.bizsuggest.com';
 const headless = process.env.HEADLESS !== 'false';
 
 const STORAGE_STATE = 'storageState.json';
+
+// Playwright's bundled Chromium build only ships support for a fixed list of
+// Linux distros. On newer releases (e.g. Ubuntu 26) that aren't on that list
+// yet, `npx playwright install` can't get a working Chromium, which blocks
+// people from running any test at all. Fall back to the system-installed
+// Google Chrome (`channel: 'chrome'`) in that case instead of hard-blocking.
+function resolveChromiumChannel(): string | undefined {
+  if (process.env.PW_CHROME_CHANNEL) return process.env.PW_CHROME_CHANNEL;
+  if (os.platform() !== 'linux') return undefined;
+
+  let bundledChromiumWorks = false;
+  try {
+    bundledChromiumWorks = fs.existsSync(chromium.executablePath());
+  } catch {
+    bundledChromiumWorks = false;
+  }
+  if (bundledChromiumWorks) return undefined;
+
+  const systemChromePaths = [
+    '/opt/google/chrome/chrome',
+    '/usr/bin/google-chrome-stable',
+    '/usr/bin/google-chrome',
+  ];
+  if (systemChromePaths.some((p) => fs.existsSync(p))) {
+    console.warn('Bundled Playwright Chromium not found — using system Google Chrome instead.');
+    return 'chrome';
+  }
+
+  console.warn(
+    "Playwright's bundled Chromium isn't installed and no system Google Chrome was found.\n" +
+    'Install Google Chrome (e.g. `sudo apt install google-chrome-stable`) or run ' +
+    '`npx playwright install chrome`, then re-run the tests.'
+  );
+  return undefined;
+}
+
+const chromiumChannel = resolveChromiumChannel();
 
 export default defineConfig({
   testDir: './tests',
@@ -46,7 +85,7 @@ export default defineConfig({
     {
       name:      'auth-setup',
       testMatch: '**/auth.setup.ts',
-      use:       { browserName: 'chromium', ...devices['Desktop Chrome'], headless: false },
+      use:       { browserName: 'chromium', ...devices['Desktop Chrome'], ...(chromiumChannel ? { channel: chromiumChannel } : {}), headless: false },
     },
 
     // ── Logged-in app tests (Lydia) ─────────────────────────────────────────
@@ -57,7 +96,7 @@ export default defineConfig({
       name:         'lydia',
       testMatch:    '**/lydia/**/*.spec.ts',
       dependencies: ['auth-setup'],
-      use:          { browserName: 'chromium', ...devices['Desktop Chrome'],  storageState: STORAGE_STATE },
+      use:          { browserName: 'chromium', ...devices['Desktop Chrome'], ...(chromiumChannel ? { channel: chromiumChannel } : {}), storageState: STORAGE_STATE },
     },
     {
       name:         'lydia-firefox',
@@ -77,7 +116,7 @@ export default defineConfig({
     {
       name:      'elisif',
       testMatch: '**/elisif/**/*.spec.ts',
-      use:       { browserName: 'chromium', ...devices['Desktop Chrome'] },
+      use:       { browserName: 'chromium', ...devices['Desktop Chrome'], ...(chromiumChannel ? { channel: chromiumChannel } : {}) },
     },
     {
       name:      'elisif-firefox',
@@ -96,7 +135,7 @@ export default defineConfig({
       name:         'ui-auth',
       testMatch:    ['**/ui/document-creation.spec.ts', '**/ui/invoice-performance.spec.ts'],
       dependencies: ['auth-setup'],
-      use:          { browserName: 'chromium', ...devices['Desktop Chrome'], storageState: STORAGE_STATE },
+      use:          { browserName: 'chromium', ...devices['Desktop Chrome'], ...(chromiumChannel ? { channel: chromiumChannel } : {}), storageState: STORAGE_STATE },
     },
 
     // ── Public UI / data tests (Chromium only) ──────────────────────────────
@@ -105,7 +144,7 @@ export default defineConfig({
       name:       'chromium',
       testMatch:  ['**/ui/**/*.spec.ts', '**/data/**/*.spec.ts'],
       testIgnore: ['**/ui/document-creation.spec.ts', '**/ui/invoice-performance.spec.ts'],
-      use:        { browserName: 'chromium', ...devices['Desktop Chrome'] },
+      use:        { browserName: 'chromium', ...devices['Desktop Chrome'], ...(chromiumChannel ? { channel: chromiumChannel } : {}) },
     },
   ],
 
