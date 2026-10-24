@@ -1,21 +1,12 @@
 import { defineConfig, devices, chromium } from '@playwright/test';
-import dotenv from 'dotenv';
-import path from 'path';
 import fs from 'fs';
 import os from 'os';
 
-// Load environment-specific .env file first, fall back to .env
-const env = process.env.ENVIRONMENT || 'staging';
-const envFile = path.resolve(__dirname, `.env.${env}`);
-const defaultEnvFile = path.resolve(__dirname, '.env');
-
-dotenv.config({ path: envFile });       // .env.staging / .env.prod
-dotenv.config({ path: defaultEnvFile }); // .env fills in anything not already set
-
-const baseURL = process.env.BASE_URL || 'https://staging.bizsuggest.com';
+const { initializeRuntime } = require('./config/runtime.cjs');
+const runtime = initializeRuntime();
+const baseURL = runtime.baseURL;
 const headless = process.env.HEADLESS !== 'false';
-
-const STORAGE_STATE = 'storageState.json';
+const STORAGE_STATE = runtime.storageState;
 
 // Playwright's bundled Chromium build only ships support for a fixed list of
 // Linux distros. On newer releases (e.g. Ubuntu 26) that aren't on that list
