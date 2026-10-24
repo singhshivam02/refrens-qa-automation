@@ -40,14 +40,22 @@
     "qa:use": "ts-node scripts/create-data.ts use",
     "qa:scenario": "ts-node scripts/create-data.ts scenario",
     "qa:invoice": "ts-node scripts/create-data.ts create invoice",
-    "qa:setup": "npm install && npm link"
+    "qa:setup": "npm install && npm link",
+    "test:inventory": "playwright test tests/lydia/inventory --project=lydia",
+    "test:inventory:firefox": "playwright test tests/lydia/inventory --project=lydia-firefox",
+    "test:inventory:webkit": "playwright test tests/lydia/inventory --project=lydia-webkit",
+    "test:inventory:contracts": "node --test --test-isolation=none tests/inventory-contracts/*.test.cjs",
+    "test:inventory:preflight": "ts-node scripts/inventory-preflight.ts"
   },
   "devDependencies": {
     "@faker-js/faker": "^9.9.0",
-    "@playwright/test": "^1.43.0",
+    "@playwright/test": "^1.61.1",
     "@types/node": "^20.0.0",
     "dotenv": "^16.4.5",
     "ts-node": "^10.9.2",
     "typescript": "^5.4.0"
+  },
+  "engines": {
+    "node": ">=22.18.0"
   }
 }

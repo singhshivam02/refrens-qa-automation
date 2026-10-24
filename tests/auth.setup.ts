@@ -1,13 +1,9 @@
 import { test as setup } from '@playwright/test';
-import dotenv from 'dotenv';
 import fs from 'fs';
-import path from 'path';
 
-const env = process.env.ENVIRONMENT || 'staging';
-dotenv.config({ path: path.resolve(__dirname, `../.env.${env}`) });
-dotenv.config({ path: path.resolve(__dirname, '../.env') });
-
-const STORAGE_FILE = path.resolve(__dirname, '../storageState.json');
+const { initializeRuntime } = require('../config/runtime.cjs');
+const runtime = initializeRuntime();
+const STORAGE_FILE = runtime.storageState;
 
 // Refresh-token cookie set by the app. Its JWT `exp` claim (and the cookie's
 // own `expires`) tell us whether a saved session is still usable, so we don't
@@ -32,7 +28,7 @@ function hasValidSession(): boolean {
 
 setup('authenticate', async ({ page }) => {
   if (hasValidSession()) {
-    console.log('Existing auth token is still valid, reusing storageState.json (no login needed).');
+    console.log('Existing auth token is still valid, reusing environment-specific storage state (no login needed).');
     return;
   }
 

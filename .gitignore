@@ -32,3 +32,8 @@ storageState.json
 /reports/stage/
 /reports/prod/
 /reports/comparison/
+
+# Environment-specific sessions and configuration
+storageState.*.json
+.env.*
+!.env.example

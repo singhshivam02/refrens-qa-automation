@@ -2,6 +2,17 @@
 
 Automated end-to-end tests for Refrens invoice generator. Built with Playwright & TypeScript. Ready for GitHub and independent team use.
 
+## Inventory checklist
+
+See [INVENTORY_TEST_PLAN.md](./INVENTORY_TEST_PLAN.md) for the inventory profiles,
+setup commands, implemented coverage and remaining scenarios. Start with
+`npm run test:inventory:preflight`, then use `npm run test:inventory -- --list` to
+inspect the cases. Live runs require dedicated test businesses and explicit
+`INVENTORY_ALLOW_MUTATIONS=true` configuration.
+
+Browser authentication now uses `storageState.<environment>.json`; switching
+between staging and production requires a separate initial login.
+
 ## Quick Start
 
 ### Installation

@@ -1,11 +1,5 @@
-import dotenv from 'dotenv';
-import path from 'path';
-
-try {
-  dotenv.config({ path: path.resolve(__dirname, '../.env') });
-} catch {
-  console.warn('dotenv not available, using process.env directly');
-}
+const { initializeRuntime } = require('./runtime.cjs');
+const runtime = initializeRuntime();
 
 // ============================================================================
 // TYPES
@@ -22,16 +16,6 @@ export interface EnvironmentConfig {
   timeout: number;
   testPassword: string;
 }
-
-// ============================================================================
-// ENVIRONMENT → URL MAPPING
-// ============================================================================
-
-const environmentUrls: Record<EnvironmentType, string> = {
-  production:  'https://www.refrens.com',
-  staging:     'https://staging.bizsuggest.com',
-  development: 'http://localhost:3000',
-};
 
 // ============================================================================
 // LOADER
@@ -54,7 +38,7 @@ function loadConfig(): EnvironmentConfig {
   return {
     locale,
     environment,
-    baseUrl:      process.env.BASE_URL      || environmentUrls[environment],
+    baseUrl:      runtime.baseURL,
     headless:     process.env.HEADLESS      !== 'false',
     timeout:      parseInt(process.env.TIMEOUT || '30000', 10),
     testPassword: process.env.TEST_PASSWORD || '',

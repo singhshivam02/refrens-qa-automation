@@ -82,10 +82,9 @@
 
 import path   from 'path';
 import fs     from 'fs';
-import dotenv from 'dotenv';
 
-dotenv.config({ path: path.resolve(process.cwd(), `.env.${process.env.ENVIRONMENT || 'staging'}`) });
-dotenv.config({ path: path.resolve(process.cwd(), '.env') });
+const { initializeRuntime } = require('../config/runtime.cjs');
+initializeRuntime();
 
 import { ApiClient }         from '../tests/data/core/apiClient';
 import { DEFAULT_URL_KEY }   from '../tests/data/core/config';
