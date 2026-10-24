@@ -61,7 +61,7 @@ test('INV-033 conversion of existing stock into a batch conserves physical quant
 });
 
 test('INV-040 serial receipt has an exact stock count and available serials', async ({ inventory: f }) => {
-  const serials = [f.name('serial-1'), f.name('serial-2')];
+  const serials = [f.serial('serial-1'), f.serial('serial-2')];
   const item = await f.createItem({ trackingMethod: 'SERIAL', initialStock: 2,
     warehouses: [{ warehouse: f.warehouse(), initialStock: 2, serials }] });
   await f.expectStock(item, 2);
@@ -71,7 +71,7 @@ test('INV-040 serial receipt has an exact stock count and available serials', as
 });
 
 test('INV-041 duplicate serial receipt is rejected and leaves stock unchanged', async ({ inventory: f }) => {
-  const serial = f.name('serial-duplicate');
+  const serial = f.serial('serial-duplicate');
   const item = await f.createItem({ trackingMethod: 'SERIAL', initialStock: 1,
     warehouses: [{ warehouse: f.warehouse(), initialStock: 1, serials: [serial] }] });
   await expectRejected(f.adjust(item, 'BUY', 1, { serials: [serial], reason: 'Purchased' }), /serial|already|duplicate/i);
@@ -144,7 +144,7 @@ test('INV-132 transaction custom field persists and appears in the transaction t
 
 for (const condition of ['REUSABLE', 'DAMAGED', 'SCRAPPED']) {
   test(`INV-080 serial-specific sale and ${condition.toLowerCase()} return`, async ({ inventory: f }) => {
-    const serials = [f.name('return-serial-1'), f.name('return-serial-2')];
+    const serials = [f.serial('return-serial-1'), f.serial('return-serial-2')];
     const item = await f.createItem({ trackingMethod: 'SERIAL', initialStock: 2,
       warehouses: [{ warehouse: f.warehouse(), initialStock: 2, serials }] });
     await f.adjust(item, 'SELL', 1, { serials: [serials[0]], reason: 'Sold' });
@@ -159,7 +159,7 @@ for (const condition of ['REUSABLE', 'DAMAGED', 'SCRAPPED']) {
 
 for (const unit of ['DAYS', 'MONTHS', 'YEARS']) {
   test(`INV-081 warranty ${unit.toLowerCase()} starts on sale and resets on reusable return`, async ({ inventory: f }) => {
-    const serial = f.name('warranty-serial');
+    const serial = f.serial('warranty-serial');
     const item = await f.createItem({ trackingMethod: 'SERIAL', initialStock: 0,
       warehouses: [{ warehouse: f.warehouse(), initialStock: 0, serials: [] }] });
     await f.adjust(item, 'BUY', 1, { serials: [serial], reason: 'Purchased', warrantyPeriod: { value: 1, unit } });

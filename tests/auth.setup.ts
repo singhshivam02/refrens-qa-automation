@@ -1,26 +1,18 @@
 import { test as setup } from '@playwright/test';
 import fs from 'fs';
 
-const { initializeRuntime } = require('../config/runtime.cjs');
+const { initializeRuntime, hasValidBrowserSession } = require('../config/runtime.cjs');
 const runtime = initializeRuntime();
 const STORAGE_FILE = runtime.storageState;
 
-// Refresh-token cookie set by the app. Its JWT `exp` claim (and the cookie's
-// own `expires`) tell us whether a saved session is still usable, so we don't
-// have to re-authenticate (and re-solve the CAPTCHA) on every run.
-const AUTH_COOKIE_NAME = '__rt';
-const EXPIRY_BUFFER_SEC = 60;
-
+// Reuse only a non-expired refresh-token cookie scoped to the selected frontend.
+// The app still validates the token itself when the session is used.
 function hasValidSession(): boolean {
   if (!fs.existsSync(STORAGE_FILE)) return false;
 
   try {
     const state = JSON.parse(fs.readFileSync(STORAGE_FILE, 'utf-8'));
-    const cookie = (state.cookies || []).find((c: any) => c.name === AUTH_COOKIE_NAME);
-    if (!cookie || !cookie.expires) return false;
-
-    const nowSec = Date.now() / 1000;
-    return cookie.expires - EXPIRY_BUFFER_SEC > nowSec;
+    return hasValidBrowserSession(state, runtime.baseURL);
   } catch {
     return false;
   }

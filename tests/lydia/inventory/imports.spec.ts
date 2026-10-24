@@ -6,8 +6,14 @@ const { csv, parseCsv, positiveTimeout } = require('./contracts.cjs');
 async function openBulk(page: Page, f: InventoryFixture, label: string) {
   await new InventoryUI(page, f).goto();
   // Disco PopoverButton renders the menu arrow immediately after its main action.
-  await page.locator('#addItem + button').click();
-  await page.getByText(label, { exact: true }).click();
+  // Initial table hydration can scroll #x-scroller, which closes an open menu.
+  // Retry only opening the menu, before any upload or mutating submission.
+  const entry = page.getByText(label, { exact: true });
+  await expect(async () => {
+    if (!await entry.isVisible()) await page.locator('#addItem + button').click();
+    await expect(entry).toBeVisible({ timeout: 1_500 });
+  }).toPass({ timeout: 10_000 });
+  await entry.click();
   await expect(page.locator('input[type="file"]')).toBeAttached();
 }
 

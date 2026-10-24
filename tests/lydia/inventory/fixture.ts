@@ -17,11 +17,21 @@ export class InventoryApiError extends Error {
   }
 }
 
+function safeTransportMessage(error: unknown) {
+  // Playwright's multiline call log includes request headers and POST bodies.
+  // Keep only its summary; never retain the original error as a cause.
+  return (error instanceof Error ? error.message.split('\n')[0] : 'Request failed')
+    .replace(/Bearer\s+\S+/gi, 'Bearer [redacted]');
+}
+
 export class InventoryApi {
+  readonly timeout = positiveTimeout(process.env.INVENTORY_REQUEST_TIMEOUT_MS, 90_000);
   constructor(readonly context: APIRequestContext) {}
   async send(method: string, endpoint: string, data?: unknown): Promise<any> {
     // Never retry writes: a response timeout does not prove the write failed.
-    const response = await this.context.fetch(endpoint, { method, data, timeout: 30_000 });
+    const response = await this.context.fetch(endpoint, { method, data, timeout: this.timeout }).catch((error: unknown) => {
+      throw new Error(`Inventory transport failure (${method} ${endpoint}): ${safeTransportMessage(error)}. The request was not retried.`);
+    });
     const body = await response.json().catch(() => null);
     if (!response.ok() || body?.success === false) {
       throw new InventoryApiError(response.status(), String(body?.message || `HTTP ${response.status()}`));
@@ -39,14 +49,20 @@ export async function connectInventory(): Promise<InventoryApi> {
   const email = process.env.QA_EMAIL || process.env.TEST_EMAIL;
   const password = process.env.QA_PASSWORD || process.env.TEST_PASSWORD;
   if (!email || !password) throw new Error('Configure QA_EMAIL and QA_PASSWORD for local JWT authentication');
-  const auth = await request.newContext({ baseURL: runtime.apiBaseURL });
+  // Standalone API contexts otherwise inherit the project's browser state file
+  // when called inside Playwright, even though authentication here uses JWTs.
+  const emptyState = { cookies: [], origins: [] };
+  const auth = await request.newContext({ baseURL: runtime.apiBaseURL, storageState: emptyState });
   try {
-    const response = await auth.post('/authentication', { data: { strategy: 'local', email, password } });
+    const response = await auth.post('/authentication', { data: { strategy: 'local', email, password } }).catch((error: unknown) => {
+      throw new Error(`Inventory authentication transport failure: ${safeTransportMessage(error)}`);
+    });
     if (!response.ok()) throw new Error(`Inventory authentication failed: HTTP ${response.status()}`);
     const body = await response.json();
     if (!body.accessToken) throw new Error('Authentication response did not contain an accessToken');
     return new InventoryApi(await request.newContext({
       baseURL: runtime.apiBaseURL,
+      storageState: emptyState,
       extraHTTPHeaders: { Authorization: `Bearer ${body.accessToken}` },
     }));
   } finally { await auth.dispose(); }
@@ -62,9 +78,9 @@ export async function inspectProfile(api: InventoryApi, profile: Profile) {
   const options = config.inventoryOptions || {};
   const warehouse = profile !== 'standard';
   if (config.manageInventory !== true || !!options.manageWarehouses !== warehouse ||
-      !!options.strictInventoryControl !== (profile === 'strict') ||
+      (profile === 'strict' && options.strictInventoryControl !== true) ||
       (profile === 'uom' && options.isUomEnabled !== true)) {
-    throw new Error(`${profile}: enable inventory; warehouses=${warehouse}; strict=${profile === 'strict'}; UOM=${profile === 'uom' ? 'true' : 'optional'}. Tests do not change business settings.`);
+    throw new Error(`${profile}: enable inventory; warehouses=${warehouse}; strict=${profile === 'strict' ? 'true' : 'optional (fixture items are non-strict)'}; UOM=${profile === 'uom' ? 'true' : 'optional'}. Tests do not change business settings.`);
   }
   if ((business.country || business.billedBy?.country) !== 'IN') {
     throw new Error(`${profile}: inventory document fixtures require an Indian business`);
@@ -86,6 +102,10 @@ export class InventoryFixture {
     this.root = `/businesses/${encodeURIComponent(urlKey)}`;
   }
   name(suffix: string) { return `${this.prefix}-${suffix}`; }
+  serial(suffix: string) {
+    if (!/^[a-zA-Z0-9_-]{1,20}$/.test(suffix)) throw new Error('Fixture serial suffix must be 1–20 letters, digits, hyphens or underscores');
+    return `INV-${this.prefix.slice(6).replace(/-/g, '').slice(0, 24)}-${suffix}`.toUpperCase();
+  }
   track(kind: string, record: RecordData) {
     if (!record?._id) throw new Error(`No _id returned for ${kind}`);
     if (!this.records.some((r) => r.kind === kind && r.id === record._id)) this.records.push({ kind, id: record._id });
@@ -98,6 +118,7 @@ export class InventoryFixture {
       name: this.name(`item-${this.records.length}`), sku: this.name(`sku-${this.records.length}`),
       itemType: 'product', currency: this.business.currency || 'INR',
       isStockManaged: true, isSalesItem: true, trackingMethod: 'NONE',
+      strictControl: false,
       initialStock, costPrice: 50, sellingPrice: 100, gstRate: 0, unit: 'NOS',
       reorderPoint: 2, overstockPoint: 20,
       ...(this.warehouses.length ? { warehouses: [{ warehouse: this.warehouse(), initialStock }] } : {}),
@@ -176,7 +197,7 @@ export class InventoryFixture {
     const date = new Date().toISOString().slice(0, 10);
     return {
       billType: 'INVOICE', invoiceType: 'INVOICE', invoiceTitle: 'Invoice',
-      status: 'ACTIVE', invoiceNumber: this.name(`doc-${randomUUID().slice(0, 8)}`),
+      status: 'UNPAID', invoiceNumber: this.name(`doc-${randomUUID().slice(0, 8)}`),
       invoiceDate: date, dueDate: date, dueInDays: 0, currency: 'INR', locale: 'en-IN',
       taxType: 'INDIA', taxName: 'GST', igst: false, placeOfSupply: '27', supplyType: 'B2C',
       billedBy: { name: this.business.name, country: 'IN', state: 'Maharashtra', gstState: '27',
@@ -195,7 +216,16 @@ export class InventoryFixture {
     };
   }
   async createDocument(items: Record<string, any>[], overrides: Record<string, any> = {}) {
-    const doc = this.track('invoices', await this.api.post(`${this.root}/invoices`, this.documentPayload(items, overrides)));
+    const { isExpenditure, ...options } = overrides;
+    const kind = isExpenditure ? 'expenditures' : 'invoices';
+    const payload: Record<string, any> = this.documentPayload(items, options);
+    if (isExpenditure) {
+      payload.expenseNumber = payload.invoiceNumber;
+      const businessAddress = payload.billedBy;
+      payload.billedBy = { ...payload.billedTo, name: this.name('vendor') };
+      payload.billedTo = businessAddress;
+    }
+    const doc = this.track(kind, await this.api.post(`${this.root}/${kind}`, payload));
     // Document hooks can create a contact. Only claim one whose persisted name
     // proves this test owns it; never clean up an existing tenant contact.
     for (const contact of [doc.client, doc.vendor].filter(Boolean)) {
@@ -205,7 +235,8 @@ export class InventoryFixture {
     return doc;
   }
   async patchDocument(doc: RecordData, changes: Record<string, any>) {
-    return this.api.patch(`${this.root}/invoices/${doc._id}`, changes);
+    const kind = this.records.find((r) => r.id === doc._id && r.kind === 'expenditures') ? 'expenditures' : 'invoices';
+    return this.api.patch(`${this.root}/${kind}/${doc._id}`, changes);
   }
   async cancel(doc: RecordData) { return this.patchDocument(doc, { status: 'CANCELED' }); }
   async cleanup(testInfo: TestInfo) {
@@ -217,13 +248,17 @@ export class InventoryFixture {
     const errors: string[] = [];
     // Reverse dependency order: notes/sales before purchases, packages before children.
     const reversed = [...this.records].reverse();
-    const cleanupOrder = ['invoices', 'inventories', 'clients', 'warehouses']
-      .flatMap((kind) => reversed.filter((record) => record.kind === kind));
+    const cleanupOrder = [
+      ...reversed.filter((record) => ['invoices', 'expenditures'].includes(record.kind)),
+      ...['inventories', 'clients', 'warehouses'].flatMap((kind) => reversed.filter((record) => record.kind === kind)),
+    ];
     for (const record of cleanupOrder) {
       try {
-        if (record.kind === 'invoices') {
-          const doc = await this.api.get(`${this.root}/invoices/${record.id}`);
+        if (['invoices', 'expenditures'].includes(record.kind)) {
+          const doc = await this.api.get(`${this.root}/${record.kind}/${record.id}`);
           if (doc.status !== 'CANCELED') await this.cancel(doc);
+        } else if (record.kind === 'clients') {
+          await this.api.patch(`${this.root}/clients/${record.id}`, { isArchived: true });
         } else if (record.kind === 'warehouses') {
           await this.api.patch(`${this.root}/warehouses/${record.id}`, { isActive: false });
         } else await this.api.remove(`${this.root}/${record.kind}/${record.id}`);
@@ -260,8 +295,8 @@ export async function expectRejected(action: Promise<unknown>, message: RegExp) 
   catch (error) {
     expect(error).toBeInstanceOf(InventoryApiError);
     const err = error as InventoryApiError;
-    // 200 success:false is the internal inventory-batch validation contract.
-    expect([200, 400, 409, 422]).toContain(err.status);
+    // Feathers POSTs may return 201 with success:false for application validation.
+    expect([200, 201, 400, 409, 422]).toContain(err.status);
     expect(err.detail).toMatch(message);
     return;
   }

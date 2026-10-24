@@ -7,8 +7,8 @@ videos and traces. There is no separate runner or scheduler.
 This is a new draft implementation based on the supplied inventory plan. The
 supplied document described another implementation that was not present in the
 checkout or upstream history. Its claims about prior validation do not apply to
-these files. The tests below are discoverable and type checked; live application
-workflows still require configured test businesses and verification.
+these files. The tests below are discoverable and type checked. The live validation
+section records the subset verified against an authorized staging business.
 
 ## Local setup
 
@@ -36,10 +36,14 @@ serials and imports. Do not point it at an operational business.
 
 | Profile | Variable | Required configuration |
 | --- | --- | --- |
-| standard | INVENTORY_URL_KEY (DEFAULT_URL_KEY fallback) | Inventory on; warehouses off; business strict control off |
-| warehouses | INVENTORY_WAREHOUSE_URL_KEY | Inventory and warehouses on; strict control off; two active warehouses |
+| standard | INVENTORY_URL_KEY (DEFAULT_URL_KEY fallback) | Inventory on; warehouses off; fixture items non-strict |
+| warehouses | INVENTORY_WAREHOUSE_URL_KEY | Inventory and warehouses on; two active warehouses; fixture items non-strict |
 | strict | INVENTORY_STRICT_URL_KEY | Inventory, warehouses and business strict control on; two active warehouses |
-| uom | INVENTORY_UOM_URL_KEY | Inventory, warehouses and UOM on; strict control off; two active warehouses |
+| uom | INVENTORY_UOM_URL_KEY | Inventory, warehouses and UOM on; two active warehouses; fixture items non-strict |
+
+Warehouse and UOM profiles can share a business with strict control enabled:
+their freshly created items explicitly set strictControl=false. Strict cases opt
+their items in separately. No business setting is toggled to switch profiles.
 
 The QA user must have access to these businesses and the necessary paid/trial
 features: adjustments, warehouses, batch/serial tracking, strict control, UOM,
@@ -60,6 +64,7 @@ present, it authenticates and reads each business and its active warehouses.
 
 ```bash
 npm run test:inventory:preflight
+npm run test:inventory:preflight -- --profile=warehouses,strict,uom
 npm run test:inventory:contracts
 npm run test:inventory -- --list
 ```
@@ -67,7 +72,9 @@ npm run test:inventory -- --list
 After verifying the businesses are dedicated to regression testing, set
 INVENTORY_ALLOW_MUTATIONS=true in the ignored .env. Fixture setup fails if this
 flag is absent. A browser authentication dependency can still run before fixture
-setup, so run preflight first.
+setup, so run preflight first. API-only specs may be run explicitly with
+`npx playwright test tests/lydia/inventory/strict.spec.ts --project=lydia --no-deps`;
+they authenticate independently and do not need a browser storage-state file.
 
 ```bash
 npm run test:inventory -- --headed
@@ -85,6 +92,10 @@ BASE_URL and API_BASE_URL retain their independent override roles. The prod alia
 now resolves to production for browser and API defaults, rather than the staging
 API. Authentication files are storageState.<environment>.json; legacy
 storageState.json is not adopted because its environment cannot be determined.
+Session reuse also checks cookie expiry and domain coverage for BASE_URL. A cookie
+for staging.example.test cannot authenticate a sibling qa03.example.test frontend.
+Preflight reports incompatible browser state; choose the corresponding frontend
+or perform a fresh browser login rather than copying a legacy state file.
 
 ## Implemented coverage
 
@@ -142,17 +153,23 @@ Every test uses a UUID prefix and owns its items/documents. API fixture data is
 polled into the search index before UI selection. No test chooses an arbitrary
 existing invoice or inventory item. Imports are submitted once, then polled;
 writes are not retried after ambiguous transport failures. Fixture calls treat
-HTTP 200 success:false as a failure, and validation-rejection assertions cannot
+HTTP 200/201 success:false as a failure, and validation-rejection assertions cannot
 pass on authentication errors or server errors.
 
 Each test attaches inventory-records.json with its profile, business, prefix and
 created IDs, without credentials or tokens. Failed tests retain records for
 diagnosis. Successful tests cancel documents in reverse creation order, then
-soft-remove owned inventory and contacts. Created warehouses, when used by future
+soft-remove owned inventory and archive owned contacts through PATCH (REST contact
+deletion is disallowed). Created warehouses, when used by future
 cases, are deactivated last. Cleanup errors are attached separately and annotated;
 they do not hide workflow failures. Batches/serials can remain associated with
 soft-removed items; this is application cleanup, not database deletion.
 
+INVENTORY_REQUEST_TIMEOUT_MS controls request-response waiting (90 seconds by
+default). A timed-out write is not retried: the server may already have committed
+it, so inspect its unique test prefix before proceeding. Transport error messages
+discard Playwright's request-header/body call logs to keep credentials out of
+diagnostics. Serial identifiers stay within the deployed 50-character limit.
 INVENTORY_POLL_TIMEOUT_MS controls ordinary stock/index polling.
 INVENTORY_BULK_TIMEOUT_MS controls imported-record polling. Missing settings or
 unsupported deployment contracts should be investigated rather than replaced
@@ -164,18 +181,46 @@ Verified locally for this draft:
 
 - Locked dependencies installed successfully.
 - `npx tsc --noEmit` passed, including playwright.config.ts.
-- All 25 local contract/configuration/fixture checks passed.
+- All 31 local contract/configuration/fixture checks passed.
 - Each Lydia browser project discovered 88 inventory cases plus authentication
   setup (89 tests across eight files).
 - Chromium, Firefox and WebKit launched and rendered a local HTML page.
-- Preflight correctly reported missing warehouse, strict and UOM business keys
-  before making any remote request. Mutations remain disabled locally.
+- Selected-profile preflight verified warehouses, strict and UOM against one
+  authorized staging business, with no business-setting changes. The saved
+  environment keeps mutations disabled; individual live commands enabled them
+  explicitly for the authorized profiles.
+
+Live validation after fixture corrections: **34 distinct cases passed** across
+the strict, warehouse, serial and UOM groups. This includes nine strict-control
+cases; warehouse allocation/transfer and batch creation/migration; split batch
+edits; serial receipt, duplicate rejection, return conditions and three warranty
+units; expiry buckets; UOM conversions and invalid factors; batch CSV import;
+transaction custom-field table visibility; and the serial/UOM UI restriction.
+Browser cases used a freshly verified staging session on the cookie-compatible
+frontend. API cases use independent empty-state JWT contexts.
+Initial passing document runs attached cleanup warnings because REST contact
+deletion returned HTTP 405. Cleanup now uses the application's contact archive
+operation, with a regression check; warnings were not counted as workflow failures.
+
+**INV-073 remains failing:** editing a newly created batch's name through
+`PATCH /businesses/:business/inventories/:inventory/batches/:batch` returned HTTP
+500, `Maximum call stack size exceeded`, before the snapshot assertion. The
+failure remains visible; no assertion was weakened to accept it. Its records were
+retained. One earlier serial receipt hit the original 30-second response timeout;
+a read-only inspection confirmed the item and both serials had committed. That
+request was not retried; subsequent fresh serial scenarios passed with the
+configurable timeout.
+
+The other **53 standard-profile cases have not been run live** because the
+authorized business has warehouses enabled. They need a separate authorized
+business with warehouses disabled. Firefox/WebKit live application workflows
+also remain unverified; browser startup and discovery passed for both.
 
 Local validation covers runtime aliases/precedence/auth-state separation, stock
 mode expectations, populated references, CSV round trips, timeout validation,
 HTTP failure classification, no write retries, configuration failures, and cleanup
 ownership/order/retention. These checks use local fixtures or fake HTTP responses.
 
-Live E2E execution remains unverified. Credentials are locally configured, but
-dedicated inventory profiles still need to be supplied and verified. Browser
-discovery and local rendering checks are not substitutes for a real application run.
+The full suite is not green and the PR remains a draft. Local reports, screenshots,
+videos and retained-resource diagnostics live in the ignored inventory-live-results
+directory; personal business keys, credentials and browser sessions are not committed.

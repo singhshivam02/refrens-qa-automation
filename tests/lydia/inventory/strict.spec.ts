@@ -25,7 +25,8 @@ test('INV-052 concurrent last-unit sales allow exactly one deduction', async ({ 
   const results = await Promise.allSettled([
     f.createDocument([f.line(item, 1)]), f.createDocument([f.line(item, 1)]),
   ]);
-  expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
+  const outcomes = results.map((r) => r.status === 'rejected' ? String(r.reason) : `created ${r.value._id}`);
+  expect(results.filter((r) => r.status === 'fulfilled'), outcomes.join('\n')).toHaveLength(1);
   const rejected = results.find((r) => r.status === 'rejected') as PromiseRejectedResult;
   expect(String(rejected.reason)).toMatch(/strict|stock|negative|lock|concurrent/i);
   await f.expectStock(item, 0);
@@ -59,7 +60,7 @@ for (const action of ['reduce', 'cancel', 'delete']) {
     await f.createDocument([f.line(item, 4)]);
     await f.expectStock(item, 1);
     const operation = action === 'cancel' ? f.cancel(purchase) : action === 'delete'
-      ? f.api.remove(`${f.root}/invoices/${purchase._id}`)
+      ? f.api.remove(`${f.root}/expenditures/${purchase._id}`)
       : f.patchDocument(purchase, { items: [f.line(item, 3)] });
     await expectRejected(operation, /strict|stock|negative|consumed/i);
     await f.expectStock(item, 1);

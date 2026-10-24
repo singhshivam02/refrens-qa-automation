@@ -35,5 +35,6 @@ storageState.json
 
 # Environment-specific sessions and configuration
 storageState.*.json
+/inventory-live-results/
 .env.*
 !.env.example

@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
-const { loadRuntime, normalizeEnvironment } = require('../../config/runtime.cjs');
+const { loadRuntime, normalizeEnvironment, hasValidBrowserSession } = require('../../config/runtime.cjs');
 
 function fixture(t, files = {}) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'inventory-env-'));
@@ -60,4 +60,14 @@ test('API and browser override roles remain independent', (t) => {
   const config = loadRuntime(fixture(t), { BASE_URL: 'https://browser.test/', API_BASE_URL: 'https://api.test/' });
   assert.equal(config.baseURL, 'https://browser.test');
   assert.equal(config.apiBaseURL, 'https://api.test');
+});
+
+test('browser auth reuse requires a cookie covering the selected frontend domain', () => {
+  const now = Date.now();
+  const cookie = { name: '__rt', value: 'test-only', domain: '.staging.example.test', expires: now / 1000 + 3600 };
+  assert.equal(hasValidBrowserSession({ cookies: [cookie] }, 'https://staging.example.test', now), true);
+  assert.equal(hasValidBrowserSession({ cookies: [cookie] }, 'https://qa03.example.test', now), false);
+  assert.equal(hasValidBrowserSession({ cookies: [{ ...cookie, expires: now / 1000 + 30 }] }, 'https://staging.example.test', now), false);
+  assert.equal(hasValidBrowserSession({ cookies: [{ ...cookie, expires: undefined }] }, 'https://staging.example.test', now), false);
+  assert.equal(hasValidBrowserSession({ cookies: [{ ...cookie, domain: 'staging.example.test' }] }, 'https://child.staging.example.test', now), false);
 });

@@ -47,4 +47,15 @@ function initializeRuntime() {
   return runtime;
 }
 
-module.exports = { loadRuntime, initializeRuntime, normalizeEnvironment };
+function hasValidBrowserSession(state, baseURL, now = Date.now()) {
+  const host = new URL(baseURL).hostname;
+  return (state?.cookies || []).some((cookie) => {
+    if (cookie.name !== '__rt' || !cookie.value || !Number.isFinite(cookie.expires) || cookie.expires <= now / 1000 + 60) return false;
+    const domain = String(cookie.domain || '');
+    return domain.startsWith('.')
+      ? host === domain.slice(1) || host.endsWith(domain)
+      : host === domain;
+  });
+}
+
+module.exports = { loadRuntime, initializeRuntime, normalizeEnvironment, hasValidBrowserSession };
